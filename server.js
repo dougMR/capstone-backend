@@ -2,6 +2,9 @@
 // express setup includes (cors, body-parser, bcrypt, sessions)
 const express = require("express");
 const server = express();
+
+
+
 // so our frontend on 3000 can talk to our server on 3001
 const cors = require("cors");
 // server.use(cors({ credentials: true, origin: "http://localhost:3002" }));
@@ -879,8 +882,14 @@ const getNeighborTiles = (tile, grid) => {
 
 // tell server to listen on port 3001
 // according to geeksforgeeks.org/express-js-app-listen-function/, the 2nd parameter specifies a function that will get executed, once your app starts listening to specified port
-server.listen(3001, () => {
-    console.log("API running!  It's alive!!");
+
+// if heroku, process.env.PORT will be provided
+let port = process.env.PORT;
+if (!port) {
+	port = 3001;
+}
+server.listen(port, () => {
+	console.log("Server running.  It's alive!!");
 });
 
 const getTilesByStoreID = async (storeID) => {
