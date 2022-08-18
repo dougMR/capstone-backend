@@ -54,7 +54,13 @@ const authRequired = (req, res, next) => {
 
 // creates a route, or endpoint, at the specified path "/"
 server.get("/", (req, res) => {
-    res.send("Welcome to my ShopFaster API.");
+    try{
+        res.send("Welcome to my ShopFaster API.");
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({error: true, errorDetails: error, message: "Something went wrong"})
+    }
 });
 
 // -------------
@@ -690,7 +696,9 @@ server.post("/user", async (req, res) => {
 server.post("/login", async (req, res) => {
     //
     const user = await User.findOne(
-        { where: { username: req.body.username } },
+        { where: { username: req.body.username },
+        //  attributes: ["id", "firstName"]
+         },
         { raw: true }
     );
     if (!user) {
@@ -701,7 +709,7 @@ server.post("/login", async (req, res) => {
             user.password
         );
         if (matchingPassword) {
-            req.session.user = user;
+            req.session.user =user;//{id: user.id, firstName: user.firstName};
             res.send({
                 success: true,
                 message: "open sesame!",
