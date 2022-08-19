@@ -4,8 +4,33 @@
 const Sequelize = require("sequelize");
 
 // Point to the db
-const db = new Sequelize("postgres://dougroussin@localhost:5432/shop_faster", 
-{logging: false});
+let options = {};
+// if on heroku, there will be process.env, with property DATABASE_URL
+let databaseURL = process.env.DATABASE_URL;
+if (!databaseURL) {
+    // we're on localhost
+    databaseURL = "postgres://dougroussin@localhost:5432/blog";
+    options = {
+        logging: false,
+    };
+} else {
+    // we're not on localhost
+    options = {
+        logging: false,
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false,
+            },
+        },
+    };
+}
+
+
+
+const db = new Sequelize(databaseURL, options);
+// const db = new Sequelize("postgres://dougroussin@localhost:5432/shop_faster", 
+// {logging: false});
 // {logging: console.log});
 const User = require("./User")(db);
 const Inventory_item = require("./Inventory_item")(db);
