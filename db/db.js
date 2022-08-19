@@ -9,7 +9,7 @@ let options = {};
 let databaseURL = process.env.DATABASE_URL;
 if (!databaseURL) {
     // we're on localhost
-    databaseURL = "postgres://dougroussin@localhost:5432/blog";
+    databaseURL = "postgres://dougroussin@localhost:5432/shop_faster";
     options = {
         logging: false,
     };
