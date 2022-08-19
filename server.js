@@ -698,8 +698,8 @@ server.post("/user", async (req, res) => {
 server.post("/login", async (req, res) => {
     //
     console.log("looking for user...",req.body);
-    const users = await User.findAll();
-    console.log("users: ",users);
+    // const users = await User.findAll();
+    // console.log("users: ",users);
     const user = await User.findOne(
         { where: { username: req.body.username }},
         { raw: true }
@@ -714,7 +714,7 @@ server.post("/login", async (req, res) => {
         );
         if (matchingPassword) {
             req.session.user =user;//{id: user.id, firstName: user.firstName};
-            console.log('Logged in.  User: ',req.session.user);
+            console.log('/login Logged in.  User: ',req.session.user);
             res.send({
                 success: true,
                 message: "open sesame!",
@@ -726,7 +726,7 @@ server.post("/login", async (req, res) => {
             });
         }
     }
-    console.log("logged in.  req.session: ", req.session);
+    // console.log("logged in.  req.session: ", req.session);
 });
 
 //
