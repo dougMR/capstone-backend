@@ -5,11 +5,10 @@ const server = express();
 
 
 
-// so our frontend on 3000 can talk to our server on 3001
+
 const cors = require("cors");
-// server.use(cors({ credentials: true, origin: "http://localhost:3002" }));
-server.use(cors({ credentials: true, origin: "http://localhost:3000" }));
-// server.use(cors({ credentials: true, origin: "http://127.0.0.1:5503" }));
+server.use(cors({ credentials: true, origin: ["http://localhost:3000","https://dougmr-capstone-frontend.herokuapp.com"] }));
+
 // bodyParser turns incoming body JSON into an object
 const bodyParser = require("body-parser");
 server.use(bodyParser.json());
