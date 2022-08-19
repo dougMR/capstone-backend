@@ -1021,3 +1021,4 @@ const createStore = async (
 
 // createStore(1,"Fresh Mart", "grocery-store-layout.png",{ col: 42, row: 42 }, { col: 25, row: 35 });
 // createStore(2,"James St Wegmans", "JamesStWegmans_floorplan-store-layout.png",{ col: 103, row: 92 }, { col: 76, row: 80 });
+// comment for new commit
