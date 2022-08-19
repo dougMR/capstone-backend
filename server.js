@@ -732,10 +732,7 @@ server.post("/login", async (req, res) => {
 // Login Status
 //
 server.get("/loginStatus", async (req, res) => {
-    const tags = await Tag.findAll();
-    console.log("tags: ",tags);
-    const users = await User.findAll();
-    console.log("users: ",users);
+    console.log('/loginStatus, req.session: ',req.session);
     if (req.session.user) {
         const user = await User.findOne({ where: { id: req.session.user.id } });
         res.send({
@@ -746,6 +743,7 @@ server.get("/loginStatus", async (req, res) => {
         res.send({ isLoggedIn: false });
     }
 });
+
 
 // -------------
 // TILES
@@ -996,17 +994,17 @@ const createFirstUser = async () => {
 
 // createFirstUser();
 
-const test = async () => {
-    const stores = await Store.findAll();
-    console.log('stores: ',stores.length);
-    const tags = await Tag.findAll();
-    console.log('tags: ',tags.length);
-    const listItems = await List_item.findAll();
-    console.log("listItems: ",listItems.length);
-    const users = await User.findAll();
-    console.log('users: ', users);
-}
-test();
+// const test = async () => {
+//     const stores = await Store.findAll();
+//     console.log('stores: ',stores.length);
+//     const tags = await Tag.findAll();
+//     console.log('tags: ',tags.length);
+//     const listItems = await List_item.findAll();
+//     console.log("listItems: ",listItems.length);
+//     const users = await User.findAll();
+//     console.log('users: ', users);
+// }
+// test();
 //
 // Create Stores, requires tiles already populated
 //
