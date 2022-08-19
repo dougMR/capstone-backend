@@ -704,7 +704,7 @@ server.post("/login", async (req, res) => {
         { where: { username: req.body.username }},
         { raw: true }
     );
-    console.log("USER: ",user);
+    console.log("found USER: ",user);
     if (!user) {
         res.send({ error: "username not found" });
     } else {
@@ -714,6 +714,7 @@ server.post("/login", async (req, res) => {
         );
         if (matchingPassword) {
             req.session.user =user;//{id: user.id, firstName: user.firstName};
+            console.log('Logged in.  User: ',req.session.user);
             res.send({
                 success: true,
                 message: "open sesame!",
@@ -732,8 +733,9 @@ server.post("/login", async (req, res) => {
 // Login Status
 //
 server.get("/loginStatus", async (req, res) => {
-    console.log('/loginStatus, req.session: ',req.session);
+    console.log('/loginStatus, req.session.user: ',req.session.user);
     if (req.session.user) {
+        console.log('login status: Logged in!');
         const user = await User.findOne({ where: { id: req.session.user.id } });
         res.send({
             isLoggedIn: true,
