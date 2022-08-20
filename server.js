@@ -714,7 +714,7 @@ server.post("/login", async (req, res) => {
         );
         if (matchingPassword) {
             req.session.user =user;//{id: user.id, firstName: user.firstName};
-            console.log('/login Logged in.  User: ',req.session.user);
+            console.log('/login Logged in.  req.session.user: ',req.session.user);
             res.send({
                 success: true,
                 message: "open sesame!",
@@ -735,13 +735,14 @@ server.post("/login", async (req, res) => {
 server.get("/loginStatus", async (req, res) => {
     console.log('/loginStatus, req.session.user: ',req.session.user);
     if (req.session.user) {
-        console.log('login status: Logged in!');
+        console.log('loginStatus: Logged in!');
         const user = await User.findOne({ where: { id: req.session.user.id } });
         res.send({
             isLoggedIn: true,
             storeID: user.current_store_id,
         });
     } else {
+        console.log('loginStatus: Not Logged In.')
         res.send({ isLoggedIn: false });
     }
 });
