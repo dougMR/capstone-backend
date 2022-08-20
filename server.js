@@ -3,11 +3,16 @@
 const express = require("express");
 const server = express();
 
-
-
-
 const cors = require("cors");
-server.use(cors({ credentials: true, origin: ["http://localhost:3000","https://dougmr-capstone-frontend.herokuapp.com"] }));
+server.use(
+    cors({
+        credentials: true,
+        origin: [
+            "http://localhost:3000",
+            "https://dougmr-capstone-frontend.herokuapp.com",
+        ],
+    })
+);
 
 // bodyParser turns incoming body JSON into an object
 const bodyParser = require("body-parser");
@@ -15,7 +20,7 @@ server.use(bodyParser.json());
 const bcrypt = require("bcrypt");
 
 const sessions = require("express-session");
-console.log("server.js, require db.js...");
+// console.log("server.js, require db.js...");
 // DB setup
 const {
     db,
@@ -48,7 +53,7 @@ const { Op } = require("sequelize");
 
 const authRequired = (req, res, next) => {
     if (!req.session.user) {
-        res.send({ error: "No signed-in User. Posting forbidden." });
+        res.send({ error: "No signed-in User. Access forbidden." });
     } else {
         next();
     }
@@ -56,12 +61,15 @@ const authRequired = (req, res, next) => {
 
 // creates a route, or endpoint, at the specified path "/"
 server.get("/", (req, res) => {
-    try{
+    try {
         res.send("Welcome to my ShopFaster API.");
-
     } catch (error) {
         console.error(error);
-        res.status(500).send({error: true, errorDetails: error, message: "Something went wrong"})
+        res.status(500).send({
+            error: true,
+            errorDetails: error,
+            message: "Something went wrong",
+        });
     }
 });
 
@@ -697,15 +705,16 @@ server.post("/user", async (req, res) => {
 //
 server.post("/login", async (req, res) => {
     //
-    console.log("looking for user...",req.body);
+    console.log("looking for user...", req.body);
     // const users = await User.findAll();
     // console.log("users: ",users);
     const user = await User.findOne(
-        { where: { username: req.body.username }},
+        { where: { username: req.body.username } },
         { raw: true }
     );
-    console.log("found USER: ",user);
+    
     if (!user) {
+        console.log("/login - Username not found.")
         res.send({ error: "username not found" });
     } else {
         const matchingPassword = await bcrypt.compare(
@@ -713,14 +722,19 @@ server.post("/login", async (req, res) => {
             user.password
         );
         if (matchingPassword) {
-            req.session.user =user;//{id: user.id, firstName: user.firstName};
-            console.log('/login Logged in.  req.session.user: ',req.session.user);
+            req.session.user = user;
+            console.log('/login - success. username/password match.  req.session.user: ',req.session.user);
+            console.log(
+                "/login Logged in.  req.session.user: ",
+                req.session.user
+            );
             res.send({
                 success: true,
                 message: "open sesame!",
                 storeID: user.current_store_id,
             });
         } else {
+            console.log('/login - password does not match');
             res.send({
                 error: "no good.  Found user, but password does not match!",
             });
@@ -733,20 +747,19 @@ server.post("/login", async (req, res) => {
 // Login Status
 //
 server.get("/loginStatus", async (req, res) => {
-    console.log('/loginStatus, req.session.user: ',req.session.user);
+    console.log("/loginStatus, req.session.user: ", req.session.user);
     if (req.session.user) {
-        console.log('loginStatus: Logged in!');
+        console.log("loginStatus: Logged in!");
         const user = await User.findOne({ where: { id: req.session.user.id } });
         res.send({
             isLoggedIn: true,
             storeID: user.current_store_id,
         });
     } else {
-        console.log('loginStatus: Not Logged In.')
+        console.log("loginStatus: Not Logged In.");
         res.send({ isLoggedIn: false });
     }
 });
-
 
 // -------------
 // TILES
@@ -892,10 +905,10 @@ const getNeighborTiles = (tile, grid) => {
 // if heroku, process.env.PORT will be provided
 let port = process.env.PORT;
 if (!port) {
-	port = 3001;
+    port = 3001;
 }
 server.listen(port, () => {
-	console.log("Server running.  It's alive!!");
+    console.log("Server running.  It's alive!!");
 });
 
 const getTilesByStoreID = async (storeID) => {
@@ -982,7 +995,6 @@ const getTileById = async (tileID) => {
 //
 
 const createFirstUser = async () => {
-
     console.log("createFirstUser()");
     const users = await User.findAll();
     console.log("***** users: ", users);
