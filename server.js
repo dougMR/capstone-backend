@@ -38,6 +38,19 @@ console.log("db.js imported.");
 const SequelizeStore = require("connect-session-sequelize")(sessions.Store);
 const oneMonth = 100 * 60 * 60 * 24 * 30;
 // use sessions in our express app
+console.log({
+    secret: "mysecretkey",
+    store: new SequelizeStore({ db }),
+    cookie: { 
+        maxAge: oneMonth,
+        httpOnly: false, 
+        sameSite: "none",
+        secure: !!process.env.DATABASE_URL
+    },
+    resave: true,
+    saveUninitialized: true,
+    
+})
 server.use(
     sessions({
         secret: "mysecretkey",
