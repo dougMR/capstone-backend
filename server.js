@@ -705,7 +705,8 @@ server.post("/user", async (req, res) => {
 //
 server.post("/login", async (req, res) => {
     //
-    console.log("looking for user...", req.body);
+    console.log("/login looking for user...", req.body);
+    console.log("/login req.session: ",req.session);
     // const users = await User.findAll();
     // console.log("users: ",users);
     const user = await User.findOne(
