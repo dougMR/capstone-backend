@@ -60,7 +60,7 @@ const authRequired = (req, res, next) => {
 };
 
 // creates a route, or endpoint, at the specified path "/"
-server.get("/", (req, res) => {
+server.get("/", async (req, res) => {
     try {
         res.send("Welcome to my ShopFaster API.");
     } catch (error) {
@@ -751,6 +751,8 @@ server.get("/loginStatus", async (req, res) => {
     if (req.session.user) {
         console.log("loginStatus: Logged in!");
         const user = await User.findOne({ where: { id: req.session.user.id } });
+        // make sure req.session.user.current_store_id is current
+        req.session.user = user; 
         res.send({
             isLoggedIn: true,
             storeID: user.current_store_id,
@@ -760,6 +762,7 @@ server.get("/loginStatus", async (req, res) => {
         res.send({ isLoggedIn: false });
     }
 });
+
 
 // -------------
 // TILES
