@@ -42,7 +42,12 @@ server.use(
     sessions({
         secret: "mysecretkey",
         store: new SequelizeStore({ db }),
-        cookie: { maxAge: oneMonth, httpOnly: false, sameSite: "none" },
+        cookie: { 
+            maxAge: oneMonth,
+            httpOnly: false, 
+            sameSite: "none",
+            secure: !!process.env.DATABASE_URL
+        },
         resave: true,
         saveUninitialized: true,
         
