@@ -41,6 +41,8 @@ server.use(
         secret: "mysecretkey",
         store: new SequelizeStore({ db }),
         cookie: { maxAge: oneMonth },
+        resave: true,
+        saveUninitialized: true,
     })
 );
 
@@ -706,16 +708,16 @@ server.post("/user", async (req, res) => {
 server.post("/login", async (req, res) => {
     //
     console.log("/login looking for user...", req.body);
-    console.log("/login req.session: ",req.session);
+    console.log("/login req.session: ", req.session);
     // const users = await User.findAll();
     // console.log("users: ",users);
     const user = await User.findOne(
         { where: { username: req.body.username } },
         { raw: true }
     );
-    
+
     if (!user) {
-        console.log("/login - Username not found.")
+        console.log("/login - Username not found.");
         res.send({ error: "username not found" });
     } else {
         const matchingPassword = await bcrypt.compare(
@@ -724,7 +726,10 @@ server.post("/login", async (req, res) => {
         );
         if (matchingPassword) {
             req.session.user = user;
-            console.log('/login - success. username/password match.  req.session.user: ',req.session.user);
+            console.log(
+                "/login - success. username/password match.  req.session.user: ",
+                req.session.user
+            );
             console.log(
                 "/login Logged in.  req.session.user: ",
                 req.session.user
@@ -735,7 +740,7 @@ server.post("/login", async (req, res) => {
                 storeID: user.current_store_id,
             });
         } else {
-            console.log('/login - password does not match');
+            console.log("/login - password does not match");
             res.send({
                 error: "no good.  Found user, but password does not match!",
             });
@@ -753,7 +758,7 @@ server.get("/loginStatus", async (req, res) => {
         console.log("loginStatus: Logged in!");
         const user = await User.findOne({ where: { id: req.session.user.id } });
         // make sure req.session.user.current_store_id is current
-        req.session.user = user; 
+        req.session.user = user;
         res.send({
             isLoggedIn: true,
             storeID: user.current_store_id,
@@ -763,7 +768,6 @@ server.get("/loginStatus", async (req, res) => {
         res.send({ isLoggedIn: false });
     }
 });
-
 
 // -------------
 // TILES
