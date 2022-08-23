@@ -19,6 +19,8 @@ const bodyParser = require("body-parser");
 server.use(bodyParser.json());
 const bcrypt = require("bcrypt");
 
+server.enable("trust proxy")
+
 const sessions = require("express-session");
 // console.log("server.js, require db.js...");
 // DB setup
@@ -40,10 +42,10 @@ server.use(
     sessions({
         secret: "mysecretkey",
         store: new SequelizeStore({ db }),
-        cookie: { maxAge: oneMonth },
+        cookie: { maxAge: oneMonth, httpOnly: false, sameSite: "none" },
         resave: true,
         saveUninitialized: true,
-        httpOnly: false
+        
     })
 );
 
