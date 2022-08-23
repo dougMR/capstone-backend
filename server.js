@@ -19,7 +19,7 @@ const bodyParser = require("body-parser");
 server.use(bodyParser.json());
 const bcrypt = require("bcrypt");
 
-server.enable("trust proxy")
+server.enable("trust proxy");
 
 const sessions = require("express-session");
 // console.log("server.js, require db.js...");
@@ -36,34 +36,21 @@ const {
 } = require("./db/db.js");
 console.log("db.js imported.");
 const SequelizeStore = require("connect-session-sequelize")(sessions.Store);
-const oneMonth = 100 * 60 * 60 * 24 * 30;
+const oneMonth = 1000 * 60 * 60 * 24 * 30;
 // use sessions in our express app
-console.log({
-    secret: "mysecretkey",
-    store: new SequelizeStore({ db }),
-    cookie: { 
-        maxAge: oneMonth,
-        httpOnly: false, 
-        sameSite: "none",
-        secure: !!process.env.DATABASE_URL
-    },
-    resave: true,
-    saveUninitialized: true,
-    
-})
+
 server.use(
     sessions({
         secret: "mysecretkey",
         store: new SequelizeStore({ db }),
-        cookie: { 
+        cookie: {
             maxAge: oneMonth,
-            httpOnly: false, 
+            httpOnly: false,
             sameSite: "none",
-            secure: !!process.env.DATABASE_URL
+            secure: !!process.env.DATABASE_URL,
         },
         resave: true,
         saveUninitialized: true,
-        
     })
 );
 
