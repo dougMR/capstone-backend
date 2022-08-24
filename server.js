@@ -129,6 +129,8 @@ server.get("/store/:storeID", async (req, res) => {
         // console.log(grid[0][0]);
         // add neighbors to grid tiles
         setNeighbors(grid);
+        store.entranceTile.neighbors = getNeighborTiles(store.entranceTile, grid);
+        store.checkoutTile.neighbors = getNeighborTiles(store.checkoutTile, grid);
         // console.log("wn: ", grid[0][0]);
 
         // add grid to store
