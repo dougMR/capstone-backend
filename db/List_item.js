@@ -19,5 +19,6 @@ module.exports = (db) => {
         },
         active: DataTypes.BOOLEAN,
         crossed_off: DataTypes.BOOLEAN,
+        sorting_order: DataTypes.INTEGER
     });
 };

@@ -99,42 +99,7 @@ server.get("/store/:storeID", async (req, res) => {
     if (!storeEntry) {
         res.send({ error: "No store by that ID" });
     } else {
-        // populate store object
-        const store = {
-            id: storeEntry.id,
-            name: storeEntry.name,
-            mapURL: storeEntry.map_url,
-            entranceTile: await getTileById(storeEntry.entrance_tile_id),
-            checkoutTile: await getTileById(storeEntry.checkout_tile_id),
-        };
-        // get all the tiles for this store
-        const tiles = await getTilesByStoreID(req.params.storeID);
-        // console.log("tiles.length: ", tiles.length);
-
-        // arrange tiles into grid array, by col / row
-        const grid = [];
-        // console.log(tiles[0]);
-        // console.log(tiles[0].col);
-        let count = 0;
-        for (const tile of tiles) {
-            // console.log('tile: ',tile);
-            if (!Array.isArray(grid[tile.col])) {
-                grid[tile.col] = [];
-                count++;
-            }
-            grid[tile.col][tile.row] = tile;
-        }
-        // console.log("count: ", count);
-        // console.log("grid.length: ", grid.length);
-        // console.log(grid[0][0]);
-        // add neighbors to grid tiles
-        setNeighbors(grid);
-        store.entranceTile.neighbors = getNeighborTiles(store.entranceTile, grid);
-        store.checkoutTile.neighbors = getNeighborTiles(store.checkoutTile, grid);
-        // console.log("wn: ", grid[0][0]);
-
-        // add grid to store
-        store.grid = grid;
+        const store = await buildStore(storeEntry);
 
         // send store to front end
         res.send({ store });
@@ -145,7 +110,12 @@ server.get("/store/:storeID", async (req, res) => {
 // Get all stores
 //
 server.get("/stores", async (req, res) => {
-    res.send({ stores: await Store.findAll() });
+    const storeEntries = await Store.findAll();
+    const stores = [];
+    for (const storeEntry of storeEntries) {
+        stores.push(await buildStore(storeEntry));
+    }
+    res.send({ stores });
 });
 
 //
@@ -186,6 +156,41 @@ server.get("/current-store-id", authRequired, async (req, res) => {
     const user = await User.findOne({ where: { id: req.session.user.id } });
     res.send(user.current_store_id);
 });
+
+const buildStore = async (storeEntry) => {
+    // populate store object
+    const store = {
+        id: storeEntry.id,
+        name: storeEntry.name,
+        mapURL: storeEntry.map_url,
+        entranceTile: await getTileById(storeEntry.entrance_tile_id),
+        checkoutTile: await getTileById(storeEntry.checkout_tile_id),
+    };
+    // get all the tiles for this store
+    const tiles = await getTilesByStoreID(storeEntry.id);
+
+    // arrange tiles into grid array, by col / row
+    const grid = [];
+
+    let count = 0;
+    for (const tile of tiles) {
+        if (!Array.isArray(grid[tile.col])) {
+            grid[tile.col] = [];
+            count++;
+        }
+        grid[tile.col][tile.row] = tile;
+    }
+
+    // add neighbors to grid tiles
+    setNeighbors(grid);
+    store.entranceTile.neighbors = getNeighborTiles(store.entranceTile, grid);
+    store.checkoutTile.neighbors = getNeighborTiles(store.checkoutTile, grid);
+
+    // add grid to store
+    store.grid = grid;
+
+    return store;
+};
 
 // -------------
 // STORE INVENTORY
@@ -477,22 +482,11 @@ server.patch(
     "/list-item/active/:itemID/:isActive",
     authRequired,
     async (req, res) => {
-        // console.log(
-        //     "list-item/active/",
-        //     req.params.itemID,
-        //     "/",
-        //     req.params.isActive
-        // );
-        // console.log("isActive: ", req.params.isActive);
-        await List_item.update(
-            { active: req.params.isActive },
-            { where: { id: req.params.itemID } }
-        );
-        // const changedRow = await List_item.findOne(
-        //     { where: { id: req.params.itemID } },
-        //     {attributes: ["id", "active", "crossed_off"]}
-        // );
-        // console.log("changedRow: ", changedRow);
+        let toUpdate = { active: req.params.isActive };
+        if (!req.params.isActive) {
+            toUpdate.crossef_off = false;
+        }
+        await List_item.update(toUpdate, { where: { id: req.params.itemID } });
 
         const listItems = await getShoppingList(req.session.user.id);
         res.send({ listItems });
@@ -556,6 +550,43 @@ server.patch(
 );
 
 //
+// Set List_item's sorting_order
+//
+server.patch(
+    "/list-item/order/:id/:sortOrder",
+    authRequired,
+    async (req, res) => {
+        await List_item.update(
+            { sorting_order: req.params.sortOrder },
+            { where: { id: req.params.id } }
+        );
+
+        const listItems = await getShoppingList(req.session.user.id);
+        res.send({ listItems });
+    }
+);
+
+//
+// Set List_items' sorting_order
+// Requires json array of items with .sortOrder and .id
+//
+server.patch(
+    "/list-items/order",
+    authRequired,
+    async (req, res) => {
+        for (const item of req.body.items) {
+            await List_item.update(
+                { sorting_order: item.sortOrder },
+                { where: { id: item.listItemID } }
+            );
+        }
+        const listItems = await getShoppingList(req.session.user.id);
+        res.send({ listItems });
+    }
+);
+
+
+//
 // Add List_item to list_items
 //
 server.post("/list-item", authRequired, async (req, res) => {
@@ -600,35 +631,36 @@ server.post("/list-items", authRequired, async (req, res) => {
         const dbResponse = await List_item.bulkCreate(items);
 
         console.log("dbResponse from bulkCreate: ", dbResponse);
-        res.send({ listItems: await List_item.findAll() });
+        const listItems = await getShoppingList(req.session.user.id);
+        res.send({ listItems });
     }
 });
 
 //
 // Get all List_items, as complete objects
 //
-server.get("/list-items", async (req, res) => {
-    // console.log("req.session.user.current_store_id: ",req.session.user.current_store_id);
-
-    const user = await User.findOne({
-        where: { id: req.session.user.id },
-    });
-    // console.log(".get /list-items for store: ", user.current_store_id);
-    // console.log("user.storeID: ", user.current_store_id);
+server.get("/list-items", authRequired, async (req, res) => {
+    // const user = await User.findOne({
+    //     where: { id: req.session.user.id },
+    // });
 
     const listItems = await getShoppingList(req.session.user.id);
+    console.log("listItems: ", listItems);
 
-    // console.log("listItem: ", listItems[0]);
     res.send({ listItems });
 });
 
+//
+//  Return Shopping List as Objects in the format used by Front End
+//
 const getShoppingList = async (userID) => {
+    console.log("getShoppingList(", userID, ")");
     const user = await User.findOne({ where: { id: userID } });
     const storeID = user.current_store_id;
-    // console.log("\ngetShoppingList(" + storeID + ")");
+    console.log("storeID: ", storeID);
     const dbResponse = await List_item.findAll({
         where: { user_id: userID },
-        attributes: ["id", "active", "crossed_off"],
+        attributes: ["id", "active", "crossed_off", "sorting_order"],
         include: [
             {
                 model: Inventory_item,
@@ -646,16 +678,13 @@ const getShoppingList = async (userID) => {
         ],
         // raw: true
     });
-    // console.log("shopping item: ", dbResponse.toJSON());
-    // console.log("db id: ", dbResponse[0].id);
-    // console.log("active: ", dbResponse[0].toJSON().active);
-    // console.log("db item: ", dbResponse[0].toJSON());
 
     const listItems = [];
     for (const i of dbResponse) {
         const item = i.toJSON();
         listItems.push({
             listItemID: item.id,
+            sortOrder: item.sorting_order,
             active: item.active,
             crossedOff: item.crossed_off,
             inventoryID: item.inventory_item.id,
@@ -668,8 +697,48 @@ const getShoppingList = async (userID) => {
             storeID: item.inventory_item.store_id,
         });
     }
+    listItems.sort(sortListByStatus);
     return listItems;
 };
+//
+// Sort List by active / crossed out / inactive
+//
+const sortListByStatus = (a, b) => {
+    // if a is active and b is active
+    if (a.active && b.active) {
+        // both active
+        if (a.crossedOff && !b.crossedOff) {
+            return 1;
+        } else if (!a.crossedOff && b.crossedOff) {
+            return -1;
+        } else {
+            // both crossed off or both not crossed off
+            // sort by shopping order
+            return a.sortOrder === b.sortOrder
+                ? 0
+                : a.sortOrder < b.sortOrder
+                ? -1
+                : 1;
+        }
+    } else {
+        if (a.active) {
+            return -1;
+        } else if (b.active) {
+            return 1;
+        } else {
+            // both not active
+            if (a.crossedOff && !b.crossedOff) {
+                return 1;
+            } else if (!a.crossedOff && b.crossedOff) {
+                return -1;
+            } else {
+                // both crossed off or both not crossed off
+                return 0;
+            }
+        }
+    }
+};
+
 // setTimeout(()=>{
 //     getShoppingList();
 // },1000);
@@ -695,6 +764,7 @@ server.delete("/list-item/:itemID", authRequired, async (req, res) => {
 //
 // Add a new User
 //
+/*
 server.post("/user", async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
@@ -711,13 +781,33 @@ server.post("/user", async (req, res) => {
         }
     }
 });
+*/
+
+//
+// Create new User
+//
+server.post("/create-account", async (req, res) => {
+    const usernameExists = await User.findOne({
+        where: { username: req.body.username },
+    });
+    if (usernameExists) {
+        res.send({ error: "That username is already taken." });
+    } else {
+        User.create({
+            username: req.body.username,
+            password: bcrypt.hashSync(req.body.password, 10),
+            // email_address: req.body.emailAddress,
+        });
+        res.send({ success: true });
+    }
+});
 
 //
 // Log In User
 //
 server.post("/login", async (req, res) => {
     //
-    console.log("/login looking for user...", req.body);
+    // console.log("/login looking for user...", req.body);
     console.log("/login req.session: ", req.session);
     // const users = await User.findAll();
     // console.log("users: ",users);
@@ -760,6 +850,7 @@ server.post("/login", async (req, res) => {
 //
 server.get("/loginStatus", async (req, res) => {
     console.log("/loginStatus, req.session ", req.session);
+    console.log("/loginStatus, req.session.user ", req.session.user);
     if (req.session.user) {
         console.log("loginStatus: Logged in!");
         const user = await User.findOne({ where: { id: req.session.user.id } });
