@@ -19,6 +19,7 @@ const bodyParser = require("body-parser");
 server.use(bodyParser.json());
 const bcrypt = require("bcrypt");
 
+// v This is not in blog's server.js
 server.enable("trust proxy");
 
 const sessions = require("express-session");
@@ -37,22 +38,33 @@ const {
 console.log("db.js imported.");
 const SequelizeStore = require("connect-session-sequelize")(sessions.Store);
 const oneMonth = 1000 * 60 * 60 * 24 * 30;
-// use sessions in our express app
 
+// use sessions in our express app
+// blog code (seems to work)
 server.use(
     sessions({
         secret: "mysecretkey",
         store: new SequelizeStore({ db }),
-        cookie: {
-            maxAge: oneMonth,
-            httpOnly: false,
-            sameSite: "none",
-            secure: !!process.env.DATABASE_URL,
-        },
+        cookie: { maxAge: oneMonth },
         resave: true,
         saveUninitialized: true,
     })
 );
+// capstone code (seems not to work)
+// server.use(
+//     sessions({
+//         secret: "mysecretkey",
+//         store: new SequelizeStore({ db }),
+//         cookie: {
+//             maxAge: oneMonth,
+//             httpOnly: false,
+//             sameSite: "none",
+//             secure: !!process.env.DATABASE_URL,
+//         },
+//         resave: true,
+//         saveUninitialized: true,
+//     })
+// );
 
 // Op gives us access to SQL operators, like "LIKE, AND, OR, =" etc
 const { Op } = require("sequelize");
@@ -808,7 +820,7 @@ server.post("/create-account", async (req, res) => {
 server.post("/login", async (req, res) => {
     //
     // console.log("/login looking for user...", req.body);
-    console.log("/login req.session: ", req.session);
+    console.log("/login req.session.user: ", req.session.user);
     // const users = await User.findAll();
     // console.log("users: ",users);
     const user = await User.findOne(
@@ -834,6 +846,8 @@ server.post("/login", async (req, res) => {
                 success: true,
                 message: "open sesame!",
                 storeID: user.current_store_id,
+                sessionUser: req.session.user,
+                sessionCookie: req.session.cookie
             });
         } else {
             console.log("/login - password does not match");
@@ -844,12 +858,20 @@ server.post("/login", async (req, res) => {
     }
     // console.log("logged in.  req.session: ", req.session);
 });
+// 
+// Log Out
+// 
+server.get("/logout", authRequired, async (req, res) => {
+    req.session.destroy();
+    res.send({ isLoggedIn: false, session: req.session });
+});
 
 //
 // Login Status
 //
 server.get("/loginStatus", async (req, res) => {
     console.log("/loginStatus, req.session ", req.session);
+    console.log("/loginStatus, req.session.cookie: ",req.session.cookie);
     console.log("/loginStatus, req.session.user ", req.session.user);
     if (req.session.user) {
         console.log("loginStatus: Logged in!");
