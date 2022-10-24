@@ -443,6 +443,7 @@ server.post("/item", async (req, res) => {
 // Strictly for seeding/setup.
 //
 server.post("/items", async (req, res) => {
+    console.log("/items...");
     const items = req.body.items;
     const storeID = req.body.storeID;
 
@@ -660,6 +661,7 @@ server.post("/list-item", authRequired, async (req, res) => {
         }
     }
 });
+
 
 //
 // Add multiple List_item to list_items
